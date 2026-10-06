@@ -1,0 +1,10 @@
+data_stream:
+  vars:
+    paths:
+      - /custom/ignored-fields/sample.log
+agent:
+  provisioning_script:
+    language: bash
+    contents: |
+      mkdir -p /custom/ignored-fields
+      echo 'Sample log for ignored fields validation' > /custom/ignored-fields/sample.log
