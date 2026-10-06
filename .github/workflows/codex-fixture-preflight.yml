@@ -1,0 +1,87 @@
+name: Ignored field fixture corrected preflight
+on:
+  push:
+    branches: [codex/preflight-3999-fixtures-corrected]
+permissions:
+  contents: read
+jobs:
+  static:
+    strategy:
+      fail-fast: false
+      matrix:
+        sha: [a478121bda0b4dd7801c960be613996a6a2a01a6, 8fc7bdf1d2750b37c85d9c3ee717256b0e73e515]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+      - name: Verify exact tested commit
+        working-directory: code
+        run: test "$(git rev-parse HEAD)" = "${{ matrix.sha }}" && go version
+      - name: Upstream static commands
+        working-directory: code
+        run: make check-static
+  packages:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        sha: [a478121bda0b4dd7801c960be613996a6a2a01a6, 8fc7bdf1d2750b37c85d9c3ee717256b0e73e515, cb852b467576f5aa0c0c2b2729912d66cee01002]
+        package: [ignored_fields, ignored_fields_legacy]
+        include:
+          - package: ignored_fields
+            type: false_positives
+            target: test-check-packages-false-positives
+          - package: ignored_fields_legacy
+            type: false_positives
+            target: test-check-packages-false-positives
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+      - uses: actions/checkout@v4
+        with:
+          path: validation
+      - name: Add regression fixtures to untouched baseline control
+        if: matrix.sha == 'cb852b467576f5aa0c0c2b2729912d66cee01002' && startsWith(matrix.package, 'ignored_fields')
+        shell: bash
+        run: |
+          cp -R validation/test/packages/false_positives/${{ matrix.package }} code/test/packages/false_positives/
+          cp validation/test/packages/false_positives/${{ matrix.package }}.expected_errors validation/test/packages/false_positives/${{ matrix.package }}.stack_version code/test/packages/false_positives/
+      - name: Install test tools
+        run: |
+          sudo sysctl -w vm.max_map_count=262144
+          curl -fsSL -o /tmp/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo install /tmp/yq /usr/local/bin/yq
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Build exact contribution
+        working-directory: code
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ matrix.sha }}"
+          make install
+          go version
+          docker compose version
+      - name: Upstream package harness
+        working-directory: code
+        env:
+          PACKAGE_UNDER_TEST: ${{ matrix.package }}
+          PACKAGE_TEST_TYPE: ${{ matrix.type || 'parallel' }}
+          ELASTIC_PACKAGE_COMPOSE_DISABLE_VERBOSE_OUTPUT: 'true'
+        run: make ${{ matrix.target || 'test-check-packages-parallel' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-${{ matrix.package }}-${{ matrix.sha }}
+          path: |
+            code/build/test-results*
+            code/build/elastic-stack-dump
