@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d, cb852b467576f5aa0c0c2b2729912d66cee01002]
+        sha: [21ebb586ac1cf66f9be0188b4b724ca60119c20e, 22698492e753618211469be5bbec79b5b8cc78ac, cb852b467576f5aa0c0c2b2729912d66cee01002]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04, windows-2022, macos-15]
-        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d, cb852b467576f5aa0c0c2b2729912d66cee01002]
+        sha: [21ebb586ac1cf66f9be0188b4b724ca60119c20e, 22698492e753618211469be5bbec79b5b8cc78ac, cb852b467576f5aa0c0c2b2729912d66cee01002]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +48,13 @@ jobs:
         if: runner.os != 'Windows'
         working-directory: code
         run: make test-go-ci
+      - name: Upstream Windows checkout preparation
+        if: runner.os == 'Windows'
+        working-directory: code
+        shell: pwsh
+        run: |
+          . .buildkite/scripts/common_windows.ps1
+          fixCRLF
       - name: Windows unit tests
         if: runner.os == 'Windows'
         working-directory: code
@@ -63,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         es: ['7.14.2', '8.12.0', '8.14.3', '8.15.0', '9.3.4']
-        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d]
+        sha: [21ebb586ac1cf66f9be0188b4b724ca60119c20e, 22698492e753618211469be5bbec79b5b8cc78ac]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -98,10 +105,16 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix:
-        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d, cb852b467576f5aa0c0c2b2729912d66cee01002]
-        package: [prometheus, apache, nginx, mysql_input_otel, sql_server_input_otel]
+        sha: [21ebb586ac1cf66f9be0188b4b724ca60119c20e, 22698492e753618211469be5bbec79b5b8cc78ac, cb852b467576f5aa0c0c2b2729912d66cee01002]
+        package: [prometheus, apache, nginx, mysql_input_otel, sql_server_input_otel, ignored_fields, ignored_fields_legacy]
         include:
           - package: prometheus
+            type: false_positives
+            target: test-check-packages-false-positives
+          - package: ignored_fields
+            type: false_positives
+            target: test-check-packages-false-positives
+          - package: ignored_fields_legacy
             type: false_positives
             target: test-check-packages-false-positives
     runs-on: ubuntu-22.04
@@ -114,6 +127,15 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: code/.go-version
+      - uses: actions/checkout@v4
+        with:
+          path: validation
+      - name: Add regression fixtures to untouched baseline control
+        if: matrix.sha == 'cb852b467576f5aa0c0c2b2729912d66cee01002' && startsWith(matrix.package, 'ignored_fields')
+        shell: bash
+        run: |
+          cp -R validation/test/packages/false_positives/${{ matrix.package }} code/test/packages/false_positives/
+          cp validation/test/packages/false_positives/${{ matrix.package }}.expected_errors validation/test/packages/false_positives/${{ matrix.package }}.stack_version code/test/packages/false_positives/
       - name: Install test tools
         run: |
           sudo sysctl -w vm.max_map_count=262144
@@ -133,7 +155,6 @@ jobs:
           PACKAGE_UNDER_TEST: ${{ matrix.package }}
           PACKAGE_TEST_TYPE: ${{ matrix.type || 'parallel' }}
           ELASTIC_PACKAGE_COMPOSE_DISABLE_VERBOSE_OUTPUT: 'true'
-          ELASTIC_PACKAGE_DATA_HOME: ${{ runner.temp }}/elastic-package
         run: make ${{ matrix.target || 'test-check-packages-parallel' }}
       - uses: actions/upload-artifact@v4
         if: always()
@@ -150,11 +171,11 @@ jobs:
           path: validation
       - uses: actions/checkout@v4
         with:
-          ref: 5bb97ca6377710e52570626dfb0fe388166b4a5d
+          ref: 22698492e753618211469be5bbec79b5b8cc78ac
           path: code
       - name: Start isolated old and new nodes with shared snapshot repository
         run: |
-          test "$(git -C code rev-parse HEAD)" = 5bb97ca6377710e52570626dfb0fe388166b4a5d
+          test "$(git -C code rev-parse HEAD)" = 22698492e753618211469be5bbec79b5b8cc78ac
           sudo sysctl -w vm.max_map_count=262144
           mkdir snapshots
           chmod 777 snapshots
