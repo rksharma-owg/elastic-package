@@ -1,0 +1,26 @@
+format_version: 3.0.0
+name: ignored_fields_legacy
+title: Ignored fields validation test
+version: 0.0.1
+source:
+  license: Elastic-2.0
+description: Verify that system tests report ignored fields.
+type: integration
+categories:
+  - custom
+conditions:
+  kibana:
+    version: "^8.12.0 || ^9.0.0"
+  elastic:
+    subscription: basic
+policy_templates:
+  - name: sample
+    title: Sample logs
+    description: Collect a sample log with an ignored keyword.
+    inputs:
+      - type: logfile
+        title: Sample logs
+        description: Collect the provisioned log file.
+owner:
+  github: elastic/integrations
+  type: elastic
