@@ -1,0 +1,6 @@
+---
+description: Add a keyword that is ignored when the document is indexed.
+processors:
+  - set:
+      field: test.ignored_keyword
+      value: oversized

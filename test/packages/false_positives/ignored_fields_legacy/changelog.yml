@@ -1,0 +1,5 @@
+- version: "0.0.1"
+  changes:
+    - description: Add an ignored fields regression fixture.
+      type: enhancement
+      link: https://github.com/elastic/elastic-package/pull/3999

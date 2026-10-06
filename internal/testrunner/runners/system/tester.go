@@ -43,18 +43,13 @@ import (
 	"github.com/elastic/elastic-package/internal/wait"
 )
 
+// _ignored uses stored fields in indices created before Elasticsearch 8.15 and
+// doc values in newer indices. Select the lookup per index, including after an
+// upgrade, and propagate errors other than the legacy fielddata limitation.
 const FieldsQuery = `{
   "fields": [
     "*"
   ],
-  "runtime_mappings": {
-    "my_ignored": {
-      "type": "keyword",
-      "script": {
-        "source": "for (def v : params['_fields']._ignored.values) { emit(v); }"
-      }
-    }
-  },
   "aggs": {
     "all_ignored": {
       "filter": {
@@ -66,7 +61,9 @@ const FieldsQuery = `{
         "ignored_fields": {
           "terms": {
             "size": 100,
-            "field": "my_ignored"
+            "script": {
+              "source": "def ignored; try { ignored = doc['_ignored']; } catch (IllegalArgumentException e) { if (e.getMessage() != 'Fielddata is not supported on field [_ignored] of type [_ignored]') { throw e; } ignored = params['_fields']._ignored.values; } return ignored;"
+            }
           }
         },
         "ignored_docs": {
