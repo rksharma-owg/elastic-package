@@ -1,0 +1,175 @@
+name: Ignored fields compatibility preflight
+on:
+  push:
+    branches: [codex/preflight-3999-compatibility]
+permissions:
+  contents: read
+jobs:
+  static:
+    strategy:
+      fail-fast: false
+      matrix:
+        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d, cb852b467576f5aa0c0c2b2729912d66cee01002]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+      - name: Verify exact tested commit
+        working-directory: code
+        run: test "$(git rev-parse HEAD)" = "${{ matrix.sha }}" && go version
+      - name: Upstream static commands
+        working-directory: code
+        run: make check-static
+  unit:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, windows-2022, macos-15]
+        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d, cb852b467576f5aa0c0c2b2729912d66cee01002]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+      - name: Verify exact tested commit and runtime
+        working-directory: code
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ matrix.sha }}" && go version && go env GOOS GOARCH CGO_ENABLED
+      - name: Linux and macOS unit tests with coverage
+        if: runner.os != 'Windows'
+        working-directory: code
+        run: make test-go-ci
+      - name: Windows unit tests
+        if: runner.os == 'Windows'
+        working-directory: code
+        shell: bash
+        run: go run gotest.tools/gotestsum --junitfile build/test-results/TEST-unit-windows.xml -- -count=1 ./...
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-${{ matrix.os }}-${{ matrix.sha }}
+          path: code/build/test-*
+  boundary:
+    strategy:
+      fail-fast: false
+      matrix:
+        es: ['7.14.2', '8.12.0', '8.14.3', '8.15.0', '9.3.4']
+        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+      - name: Start isolated Elasticsearch
+        run: |
+          sudo sysctl -w vm.max_map_count=262144
+          docker run -d --name query-es -p 127.0.0.1:19200:9200 -e discovery.type=single-node -e xpack.security.enabled=false -e 'ES_JAVA_OPTS=-Xms512m -Xmx512m' docker.elastic.co/elasticsearch/elasticsearch:${{ matrix.es }}
+          for attempt in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:19200/; then exit 0; fi
+            sleep 2
+          done
+          docker logs query-es
+          exit 1
+      - name: Actual query and validation regression
+        working-directory: code
+        env:
+          ELASTIC_PACKAGE_IGNORED_FIELDS_TEST_HOST: http://127.0.0.1:19200
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ matrix.sha }}"
+          go test ./internal/testrunner/runners/system -run 'TestFieldsQueryIntegration|TestGetDocsIgnoredFields' -count=1 -v
+      - name: Query node logs
+        if: always()
+        run: docker logs query-es
+  packages:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        sha: [31011e7f646ba003a103ba919924bb9d71ce5a84, 5bb97ca6377710e52570626dfb0fe388166b4a5d, cb852b467576f5aa0c0c2b2729912d66cee01002]
+        package: [prometheus, apache, nginx, mysql_input_otel, sql_server_input_otel]
+        include:
+          - package: prometheus
+            type: false_positives
+            target: test-check-packages-false-positives
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+      - name: Install test tools
+        run: |
+          sudo sysctl -w vm.max_map_count=262144
+          curl -fsSL -o /tmp/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo install /tmp/yq /usr/local/bin/yq
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Build exact contribution
+        working-directory: code
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ matrix.sha }}"
+          make install
+          go version
+          docker compose version
+      - name: Upstream package harness
+        working-directory: code
+        env:
+          PACKAGE_UNDER_TEST: ${{ matrix.package }}
+          PACKAGE_TEST_TYPE: ${{ matrix.type || 'parallel' }}
+          ELASTIC_PACKAGE_COMPOSE_DISABLE_VERBOSE_OUTPUT: 'true'
+          ELASTIC_PACKAGE_DATA_HOME: ${{ runner.temp }}/elastic-package
+        run: make ${{ matrix.target || 'test-check-packages-parallel' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-${{ matrix.package }}-${{ matrix.sha }}
+          path: |
+            code/build/test-results*
+            code/build/elastic-stack-dump
+  upgrade:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: validation
+      - uses: actions/checkout@v4
+        with:
+          ref: 5bb97ca6377710e52570626dfb0fe388166b4a5d
+          path: code
+      - name: Start isolated old and new nodes with shared snapshot repository
+        run: |
+          test "$(git -C code rev-parse HEAD)" = 5bb97ca6377710e52570626dfb0fe388166b4a5d
+          sudo sysctl -w vm.max_map_count=262144
+          mkdir snapshots
+          chmod 777 snapshots
+          docker run -d --name old-es -p 127.0.0.1:19212:9200 -v "$PWD/snapshots:/snapshots" -e path.repo=/snapshots -e discovery.type=single-node -e xpack.security.enabled=false -e 'ES_JAVA_OPTS=-Xms512m -Xmx512m' docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+          docker run -d --name new-es -p 127.0.0.1:19234:9200 -v "$PWD/snapshots:/snapshots" -e path.repo=/snapshots -e discovery.type=single-node -e xpack.security.enabled=false -e 'ES_JAVA_OPTS=-Xms512m -Xmx512m' docker.elastic.co/elasticsearch/elasticsearch:9.3.4
+          for port in 19212 19234; do
+            ready=false
+            for attempt in $(seq 1 90); do
+              if curl -fsS "http://127.0.0.1:$port/"; then ready=true; break; fi
+              sleep 2
+            done
+            test "$ready" = true
+          done
+      - name: Restore legacy index and query mixed index formats
+        run: python3 validation/scripts/codex-preflight/ignored_upgrade.py code
+      - name: Node logs
+        if: always()
+        run: docker logs old-es && docker logs new-es
