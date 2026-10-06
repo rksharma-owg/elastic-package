@@ -1,0 +1,8 @@
+- name: input.type
+  type: keyword
+- name: log.offset
+  type: long
+- name: test.ignored_keyword
+  type: keyword
+  ignore_above: 3
+  description: A keyword intentionally exceeding the mapping limit.
