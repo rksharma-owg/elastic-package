@@ -1,0 +1,168 @@
+name: Unfinished final upstream validation checks
+on:
+  push:
+    branches: [codex/preflight-3999-unfinished-final]
+permissions:
+  contents: read
+jobs:
+  remaining:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        include:
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-check-packages-independent-script", "target": "test-check-packages-independent-script", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-check-packages-independent-script", "target": "test-check-packages-independent-script", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "other", "target": "test-check-packages-other", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "other", "target": "test-check-packages-other", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-script-upgrade", "target": "test-script-upgrade", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-script-upgrade", "target": "test-script-upgrade", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-system-test-flags", "target": "test-system-test-flags", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-system-test-flags", "target": "test-system-test-flags", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-runtime_fields", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "runtime_fields", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-runtime_fields", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "runtime_fields", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "with-kind", "target": "test-check-packages-with-kind", "group": "with-kind", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "with-kind", "target": "test-check-packages-with-kind", "group": "with-kind", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "with-custom-agent", "target": "test-check-packages-with-custom-agent", "group": "with-custom-agent", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "with-custom-agent", "target": "test-check-packages-with-custom-agent", "group": "with-custom-agent", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "apache-stack-agent", "target": "test-check-packages-parallel", "group": "parallel", "package": "apache", "independent": "false"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "apache-stack-agent", "target": "test-check-packages-parallel", "group": "parallel", "package": "apache", "independent": "false"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "benchmarks", "target": "test-check-packages-benchmarks", "group": "benchmarks", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "benchmarks", "target": "test-check-packages-benchmarks", "group": "benchmarks", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-cisco_asa", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "cisco_asa", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-cisco_asa", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "cisco_asa", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-docker_failing_test_service", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "docker_failing_test_service", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-docker_failing_test_service", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "docker_failing_test_service", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-ecs_external_false_positive_asserts", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "ecs_external_false_positive_asserts", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-ecs_external_false_positive_asserts", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "ecs_external_false_positive_asserts", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-failed_fields_present_assert", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "failed_fields_present_assert", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-failed_fields_present_assert", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "failed_fields_present_assert", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-httpjson_false_positive_asserts", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "httpjson_false_positive_asserts", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-httpjson_false_positive_asserts", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "httpjson_false_positive_asserts", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-long_integers_as_json_numbers", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "long_integers_as_json_numbers", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-long_integers_as_json_numbers", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "long_integers_as_json_numbers", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-nginx_missing_deployer", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "nginx_missing_deployer", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-nginx_missing_deployer", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "nginx_missing_deployer", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-pipeline_error_system_tests", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "pipeline_error_system_tests", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-pipeline_error_system_tests", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "pipeline_error_system_tests", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "false_positives-rally_benchmark_malformed_template", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "rally_benchmark_malformed_template", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "false_positives-rally_benchmark_malformed_template", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "rally_benchmark_malformed_template", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-apache_basic_license", "target": "test-check-packages-parallel", "group": "parallel", "package": "apache_basic_license", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-auditd_manager", "target": "test-check-packages-parallel", "group": "parallel", "package": "auditd_manager", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-auth0_logsdb", "target": "test-check-packages-parallel", "group": "parallel", "package": "auth0_logsdb", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-aws", "target": "test-check-packages-parallel", "group": "parallel", "package": "aws", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-awsfirehose", "target": "test-check-packages-parallel", "group": "parallel", "package": "awsfirehose", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-custom_entrypoint", "target": "test-check-packages-parallel", "group": "parallel", "package": "custom_entrypoint", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-httpcheck", "target": "test-check-packages-parallel", "group": "parallel", "package": "httpcheck", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-mock_service_tls", "target": "test-check-packages-parallel", "group": "parallel", "package": "mock_service_tls", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-mongodb", "target": "test-check-packages-parallel", "group": "parallel", "package": "mongodb", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-nginx_composable", "target": "test-check-packages-parallel", "group": "parallel", "package": "nginx_composable", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-nginx_multiple_services", "target": "test-check-packages-parallel", "group": "parallel", "package": "nginx_multiple_services", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-nginx_multiple_services", "target": "test-check-packages-parallel", "group": "parallel", "package": "nginx_multiple_services", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-oracle", "target": "test-check-packages-parallel", "group": "parallel", "package": "oracle", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-otel_http_server", "target": "test-check-packages-parallel", "group": "parallel", "package": "otel_http_server", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-sql_input", "target": "test-check-packages-parallel", "group": "parallel", "package": "sql_input", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-sql_input", "target": "test-check-packages-parallel", "group": "parallel", "package": "sql_input", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-system", "target": "test-check-packages-parallel", "group": "parallel", "package": "system", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-terraform_local", "target": "test-check-packages-parallel", "group": "parallel", "package": "terraform_local", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-terraform_local", "target": "test-check-packages-parallel", "group": "parallel", "package": "terraform_local", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-ti_anomali", "target": "test-check-packages-parallel", "group": "parallel", "package": "ti_anomali", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-ti_anomali", "target": "test-check-packages-parallel", "group": "parallel", "package": "ti_anomali", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-ti_anomali_logsdb", "target": "test-check-packages-parallel", "group": "parallel", "package": "ti_anomali_logsdb", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-ti_anomali_logsdb", "target": "test-check-packages-parallel", "group": "parallel", "package": "ti_anomali_logsdb", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-ti_anomali_template", "target": "test-check-packages-parallel", "group": "parallel", "package": "ti_anomali_template", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-ti_anomali_template", "target": "test-check-packages-parallel", "group": "parallel", "package": "ti_anomali_template", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-with_legacy_policy_api", "target": "test-check-packages-parallel", "group": "parallel", "package": "with_legacy_policy_api", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-with_legacy_policy_api", "target": "test-check-packages-parallel", "group": "parallel", "package": "with_legacy_policy_api", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "parallel-zipkin_input_otel", "target": "test-check-packages-parallel", "group": "parallel", "package": "zipkin_input_otel", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "parallel-zipkin_input_otel", "target": "test-check-packages-parallel", "group": "parallel", "package": "zipkin_input_otel", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-build-install-packages-composable", "target": "test-build-install-packages-composable", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-build-install-packages-composable", "target": "test-build-install-packages-composable", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-build-install-zip", "target": "test-build-install-zip", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-build-install-zip", "target": "test-build-install-zip", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-build-install-zip-file", "target": "test-build-install-zip-file", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-build-install-zip-file", "target": "test-build-install-zip-file", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-build-install-zip-file-shellinit", "target": "test-build-install-zip-file-shellinit", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-build-install-zip-file-shellinit", "target": "test-build-install-zip-file-shellinit", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-check-update-version", "target": "test-check-update-version", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-check-update-version", "target": "test-check-update-version", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-profiles-command", "target": "test-profiles-command", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-profiles-command", "target": "test-profiles-command", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-7x", "target": "test-stack-command-7x", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-7x", "target": "test-stack-command-7x", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-86", "target": "test-stack-command-86", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-86", "target": "test-stack-command-86", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-8x", "target": "test-stack-command-8x", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-8x", "target": "test-stack-command-8x", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-9x", "target": "test-stack-command-9x", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-9x", "target": "test-stack-command-9x", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-agent-version-flag", "target": "test-stack-command-agent-version-flag", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-agent-version-flag", "target": "test-stack-command-agent-version-flag", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-default", "target": "test-stack-command-default", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-default", "target": "test-stack-command-default", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-oldest", "target": "test-stack-command-oldest", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-oldest", "target": "test-stack-command-oldest", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-with-apm-server", "target": "test-stack-command-with-apm-server", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-with-apm-server", "target": "test-stack-command-with-apm-server", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-with-basic-subscription", "target": "test-stack-command-with-basic-subscription", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-with-basic-subscription", "target": "test-stack-command-with-basic-subscription", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "test-stack-command-with-self-monitor", "target": "test-stack-command-with-self-monitor", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "test-stack-command-with-self-monitor", "target": "test-stack-command-with-self-monitor", "group": "other", "package": "*", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "with-logstash-system_benchmark", "target": "test-check-packages-with-logstash", "group": "with-logstash", "package": "system_benchmark", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "with-logstash-system_benchmark", "target": "test-check-packages-with-logstash", "group": "with-logstash", "package": "system_benchmark", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "with-logstash-ti_misp", "target": "test-check-packages-with-logstash", "group": "with-logstash", "package": "ti_misp", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "with-logstash-ti_misp", "target": "test-check-packages-with-logstash", "group": "with-logstash", "package": "ti_misp", "independent": "true"}}
+    name: ${{ matrix.case.name }} (${{ matrix.sha }})
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          path: code
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: code/.go-version
+          cache-dependency-path: code/go.sum
+      - name: Install upstream test tool versions on disposable runner
+        run: |
+          sudo sysctl -w vm.max_map_count=262144
+          curl -fsSL -o /tmp/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+          sudo install /tmp/yq /usr/local/bin/yq
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install kind and kubectl where upstream requires them
+        if: matrix.case.group == 'with-kind' || matrix.case.target == 'test-system-test-flags'
+        run: |
+          curl -fsSL -o /tmp/kind https://github.com/kubernetes-sigs/kind/releases/download/v0.32.0/kind-linux-amd64
+          sudo install /tmp/kind /usr/local/bin/kind
+          curl -fsSL -o /tmp/kubectl https://dl.k8s.io/release/v1.36.1/bin/linux/amd64/kubectl
+          sudo install /tmp/kubectl /usr/local/bin/kubectl
+          kind version
+          kubectl version --client
+      - name: Build exact tested contribution
+        working-directory: code
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ matrix.sha }}"
+          make install
+          go version
+          docker compose version
+      - name: Run upstream test command
+        working-directory: code
+        env:
+          PACKAGE_UNDER_TEST: ${{ matrix.case.package }}
+          PACKAGE_TEST_TYPE: ${{ matrix.case.group }}
+          ELASTIC_PACKAGE_TEST_ENABLE_INDEPENDENT_AGENT: ${{ matrix.case.independent }}
+          ELASTIC_PACKAGE_COMPOSE_DISABLE_VERBOSE_OUTPUT: 'true'
+          ELASTIC_PACKAGE_MAXIMUM_NUMBER_PARALLEL_TESTS: '3'
+          DEFAULT_VERSION_TAG: ${{ matrix.case.target == 'test-check-update-version' && 'v0.80.0' || '' }}
+          K8S_VERSION: v1.36.1
+        run: |
+          make ${{ matrix.case.target }}
+          make check-git-clean
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: remaining-${{ matrix.case.name }}-${{ matrix.sha }}
+          path: |
+            code/build/test-results*
+            code/build/elastic-stack-dump
