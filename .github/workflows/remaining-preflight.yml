@@ -1,7 +1,7 @@
-name: Actual shared script get_docs consumer checks
+name: Exact build-output fixture with release checks disabled
 on:
   push:
-    branches: [codex/preflight-3999-script-consumer-final]
+    branches: [codex/preflight-3999-ecs-output-final]
 permissions:
   contents: read
 jobs:
@@ -10,11 +10,12 @@ jobs:
     timeout-minutes: 90
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 3
       matrix:
         include:
-          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "external-with_script", "target": "test-check-packages-other", "group": "other", "package": "with_script", "independent": "true"}}
-          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "external-with_script", "target": "test-check-packages-other", "group": "other", "package": "with_script", "independent": "true"}}
+          - {"sha": "62749a4acb6c56c6d8d8566f4e3cd517b7173d68", "case": {"name": "ecs-build-output", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "ecs_external_false_positive_asserts", "independent": "true"}}
+          - {"sha": "dec01743b4400a91258ade2c960a717ac40ffbe3", "case": {"name": "ecs-build-output", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "ecs_external_false_positive_asserts", "independent": "true"}}
+          - {"sha": "cb852b467576f5aa0c0c2b2729912d66cee01002", "case": {"name": "ecs-build-output", "target": "test-check-packages-false-positives", "group": "false_positives", "package": "ecs_external_false_positive_asserts", "independent": "true"}}
     name: ${{ matrix.case.name }} (${{ matrix.sha }})
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +55,7 @@ jobs:
           PACKAGE_TEST_TYPE: ${{ matrix.case.group }}
           ELASTIC_PACKAGE_TEST_ENABLE_INDEPENDENT_AGENT: ${{ matrix.case.independent }}
           ELASTIC_PACKAGE_COMPOSE_DISABLE_VERBOSE_OUTPUT: 'true'
+          ELASTIC_PACKAGE_CHECK_UPDATE_DISABLED: 'true'
           ELASTIC_PACKAGE_MAXIMUM_NUMBER_PARALLEL_TESTS: '3'
           DEFAULT_VERSION_TAG: ${{ matrix.case.target == 'test-check-update-version' && 'v0.80.0' || '' }}
           K8S_VERSION: v1.36.1
