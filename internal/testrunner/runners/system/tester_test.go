@@ -59,7 +59,7 @@ func TestGetDocsIgnoredFields(t *testing.T) {
 				assert.Equal(t, "/logs-test-default/_search", req.URL.Path)
 				var query map[string]any
 				assert.NoError(t, json.NewDecoder(req.Body).Decode(&query))
-				assert.Contains(t, query, "runtime_mappings")
+				assert.NotContains(t, query, "runtime_mappings")
 				assert.Contains(t, query, "aggs")
 				w.WriteHeader(tc.status)
 				fmt.Fprint(w, tc.body)

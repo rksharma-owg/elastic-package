@@ -50,14 +50,6 @@ const FieldsQuery = `{
   "fields": [
     "*"
   ],
-  "runtime_mappings": {
-    "my_ignored": {
-      "type": "keyword",
-      "script": {
-        "source": "def ignored; try { ignored = doc['_ignored']; } catch (IllegalArgumentException e) { if (e.getMessage() != 'Fielddata is not supported on field [_ignored] of type [_ignored]') { throw e; } ignored = params['_fields']._ignored.values; } for (def v : ignored) { emit(v); }"
-      }
-    }
-  },
   "aggs": {
     "all_ignored": {
       "filter": {
@@ -69,7 +61,9 @@ const FieldsQuery = `{
         "ignored_fields": {
           "terms": {
             "size": 100,
-            "field": "my_ignored"
+            "script": {
+              "source": "def ignored; try { ignored = doc['_ignored']; } catch (IllegalArgumentException e) { if (e.getMessage() != 'Fielddata is not supported on field [_ignored] of type [_ignored]') { throw e; } ignored = params['_fields']._ignored.values; } return ignored;"
+            }
           }
         },
         "ignored_docs": {
