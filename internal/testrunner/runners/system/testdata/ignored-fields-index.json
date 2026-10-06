@@ -1,0 +1,14 @@
+{
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "bad_date": { "type": "date", "ignore_malformed": true },
+      "bad_keyword": { "type": "keyword", "ignore_above": 3 }
+    }
+  },
+  "documents": [
+    { "@timestamp": "2026-10-06T00:00:00Z", "bad_date": "2026-10-06", "bad_keyword": "ok" },
+    { "@timestamp": "2026-10-06T00:00:01Z", "bad_date": "not-a-date", "bad_keyword": "oversize" },
+    { "@timestamp": "2026-10-06T00:00:02Z", "bad_date": "still-invalid", "bad_keyword": "ok" }
+  ]
+}

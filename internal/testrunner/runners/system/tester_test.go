@@ -5,8 +5,11 @@
 package system
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,16 +18,75 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/elastic/elastic-package/internal/common"
+	"github.com/elastic/elastic-package/internal/elasticsearch"
 	estest "github.com/elastic/elastic-package/internal/elasticsearch/test"
 	"github.com/elastic/elastic-package/internal/kibana"
 	"github.com/elastic/elastic-package/internal/packages"
 	"github.com/elastic/elastic-package/internal/stack"
 	"github.com/elastic/elastic-package/internal/testrunner"
 )
+
+func TestGetDocsIgnoredFields(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{
+			name:   "ignored fields",
+			status: http.StatusOK,
+			body:   `{"hits":{"total":{"value":1},"hits":[{"_source":{"bad_date":"invalid"}}]},"aggregations":{"all_ignored":{"ignored_fields":{"buckets":[{"key":"bad_date"}]},"ignored_docs":{"hits":{"hits":[{"_id":"1","ignored_field_values":{"bad_date":["invalid"]}}]}}}}}`,
+		},
+		{
+			name:   "search error",
+			status: http.StatusBadRequest,
+			body:   `{"error":{"type":"script_exception","reason":"unexpected script error"},"status":400}`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				w.Header().Set("X-Elastic-Product", "Elasticsearch")
+				w.Header().Set("Content-Type", "application/json")
+				if req.URL.Path == "/" {
+					fmt.Fprint(w, `{"version":{"number":"8.15.0","build_flavor":"default"},"tagline":"You Know, for Search"}`)
+					return
+				}
+				assert.Equal(t, "/logs-test-default/_search", req.URL.Path)
+				var query map[string]any
+				assert.NoError(t, json.NewDecoder(req.Body).Decode(&query))
+				assert.Contains(t, query, "runtime_mappings")
+				assert.Contains(t, query, "aggs")
+				w.WriteHeader(tc.status)
+				fmt.Fprint(w, tc.body)
+			}))
+			defer server.Close()
+			client, err := elasticsearch.NewClient(elasticsearch.OptionWithAddress(server.URL))
+			require.NoError(t, err)
+			r := tester{esAPI: client.API}
+			docs, err := r.getDocs(t.Context(), "logs-test-default")
+			if tc.status != http.StatusOK {
+				require.ErrorContains(t, err, "failed to search docs for data stream logs-test-default")
+				require.ErrorContains(t, err, "unexpected script error")
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, []string{"bad_date"}, docs.IgnoredFields)
+			require.Len(t, docs.Source, 1)
+			require.Len(t, docs.DegradedDocs, 1)
+			ds := scenarioDataStream{dataStream: "logs-test-default", ignoredFields: docs.IgnoredFields, degradedDocs: docs.DegradedDocs}
+			err = validateIgnoredFields(semver.MustParse("9.3.4"), ds, &testConfig{})
+			var failure testrunner.ErrTestCaseFailed
+			require.ErrorAs(t, err, &failure)
+			assert.Equal(t, "found ignored fields in data stream", failure.Reason)
+			assert.Contains(t, failure.Details, "bad_date")
+		})
+	}
+}
 
 func TestFindPolicyTemplateForInput(t *testing.T) {
 	const policyTemplateName = "my_policy_template"
